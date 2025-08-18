@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Confirmation</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <style>
+    .stepper { display: flex; flex-direction: column; margin-top: 20px; }
+    .step { display: flex; align-items: center; margin-bottom: 20px; }
+    .circle { width: 30px; height: 30px; border-radius: 50%; background: #ccc; color: #fff;
+      display: flex; justify-content: center; align-items: center; margin-right: 15px; font-weight: bold; }
+    .active { background: #28a745; }
+    .star { font-size: 24px; cursor: pointer; color: #ffc107; margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h2 class="text-success">🎉 Thank You, {{ name }}!</h2>
+    <p>Your order has been placed successfully.</p>
+
+    <h4>Delivery Details:</h4>
+    <p><strong>Address:</strong> {{ address }}</p>
+    <p><strong>Payment Method:</strong> {{ payment_method }}</p>
+    {% if notes %}
+      <p><strong>Notes:</strong> {{ notes }}</p>
+    {% endif %}
+
+    <!-- Order Status Stepper -->
+    <h4 class="mt-4">Order Status:</h4>
+    <div class="stepper" id="stepper"></div>
+
+    <!-- Estimated Delivery -->
+    <h4 class="mt-4">Estimated Delivery:</h4>
+    <p id="deliveryTime" class="text-success font-weight-bold">Calculating...</p>
+
+    <!-- Order Summary -->
+    <h4 class="mt-4">Order Summary:</h4>
+    <ul class="list-group">
+      {% for item in cart %}
+      <li class="list-group-item d-flex justify-content-between">
+        {{ item.name }} x{{ item.quantity }}
+        <span>₹{{ item.quantity|int * item.price|int }}</span>
+      </li>
+      {% endfor %}
+      <li class="list-group-item d-flex justify-content-between">
+        Subtotal <span>₹{{ total }}</span>
+      </li>
+      {% if discount > 0 %}
+      <li class="list-group-item d-flex justify-content-between text-success">
+        Discount <span>-₹{{ discount }}</span>
+      </li>
+      {% endif %}
+      <li class="list-group-item d-flex justify-content-between font-weight-bold">
+        Final Total <span>₹{{ final_total }}</span>
+      </li>
+    </ul>
+
+    <!-- Feedback & Rating (hidden until delivery) -->
+    <div id="feedbackSection" class="mt-4" style="display:none;">
+      <h4>Rate Your Experience:</h4>
+      <div class="mb-2">
+        <span class="star" data-value="1">☆</span>
+        <span class="star" data-value="2">☆</span>
+        <span class="star" data-value="3">☆</span>
+        <span class="star" data-value="4">☆</span>
+        <span class="star" data-value="5">☆</span>
+      </div>
+      <textarea id="feedbackText" class="form-control mb-2" rows="3" placeholder="Leave your feedback (optional)"></textarea>
+      <button class="btn btn-success" id="submitFeedback">Submit Feedback</button>
+      <p id="feedbackMessage" class="text-success mt-2" style="display:none;">Thank you for your feedback!</p>
+    </div>
+
+    <a href="/" class="btn btn-primary mt-3">Back to Home</a>
+  </div>
+
+  <script>
+    // Format time as hh:mm AM/PM
+    function formatTime(date){
+      let h = date.getHours();
+      let m = date.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      m = m < 10 ? '0'+m : m;
+      return `${h}:${m} ${ampm}`;
+    }
+
+    // Set estimated delivery (without countdown)
+    function setEstimatedDelivery(){
+      const now = new Date();
+      const startTime = new Date(now.getTime() + 30*60000);
+      const endTime = new Date(now.getTime() + 40*60000);
+      document.getElementById("deliveryTime").innerText =
+        `⏱ Estimated Delivery: ${formatTime(startTime)} – ${formatTime(endTime)}`;
+    }
+
+    window.onload = setEstimatedDelivery;
+
+    // Order Steps
+    let orderSteps = [
+      {id:1,text:"Order Confirmed at Restaurant",active:true,timeOffset:0},
+      {id:2,text:"Food is being prepared",active:false,timeOffset:5},
+      {id:3,text:"Out for Delivery",active:false,timeOffset:25},
+      {id:4,text:"Delivered",active:false,timeOffset:45}
+    ];
+
+    function renderStepper(){
+      const stepper = document.getElementById('stepper');
+      stepper.innerHTML = '';
+      const now = new Date();
+      orderSteps.forEach(step=>{
+        const stepTime = new Date(now.getTime() + step.timeOffset*60000);
+        const div = document.createElement('div');
+        div.className='step';
+        div.innerHTML = `
+          <div class="circle ${step.active?'active':''}">${step.id}</div>
+          <div>${step.text}<br><small>${formatTime(stepTime)}</small></div>
+        `;
+        stepper.appendChild(div);
+      });
+    }
+
+    function simulateProgress(){
+      let i=1;
+      const interval = setInterval(()=>{
+        if(i<orderSteps.length){
+          orderSteps[i].active=true;
+          renderStepper();
+          i++;
+        } else {
+          clearInterval(interval);
+          document.getElementById('feedbackSection').style.display='block';
+        }
+      },5000); // progress every 5 seconds
+    }
+
+    renderStepper();
+    simulateProgress();
+
+    // Feedback stars
+    const stars = document.querySelectorAll('.star');
+    let rating = 0;
+    stars.forEach(star=>{
+      star.addEventListener('mouseover',()=>{ highlightStars(star.dataset.value); });
+      star.addEventListener('click',()=>{ rating=star.dataset.value; highlightStars(rating); });
+      star.addEventListener('mouseout',()=>{ highlightStars(rating); });
+    });
+    function highlightStars(count){
+      stars.forEach(star=>{ star.textContent = (star.dataset.value <= count) ? '★':'☆'; });
+    }
+
+    // Submit feedback
+    document.getElementById('submitFeedback').addEventListener('click',()=>{
+      if(rating===0){ alert("Please select a rating."); return; }
+      document.getElementById('feedbackMessage').style.display='block';
+      setTimeout(()=>{
+        document.getElementById('feedbackSection').style.display='none';
+      },2000);
+    });
+  </script>
+</body>
+</html>
