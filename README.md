@@ -1,51 +1,91 @@
-# 🍽️ Online Restaurant Web App
+# 🍽️ Online Restaurant Website
 
-This is a Flask-based web application that allows users to browse food categories, view food items, add them to a cart, and checkout with a delivery address.
+An online food ordering system built using **Flask (Python)**, **SQLite**, **HTML/CSS/JS**.  
+It allows users to browse menus, add items to a cart, and checkout.
 
 ---
 
 ## 🚀 Features
-
-- View food items by category (e.g., Non-Veg Starters, Desserts, etc.)
-- Add items to the cart
-- Increase or decrease quantity
-- Remove items from cart
-- Checkout with delivery address form
-- User login/logout functionality
-- Search functionality to find items like “Paneer”
-- Responsive design using Bootstrap
+- 🔑 User login system
+- 📂 Menu browsing by category
+- 🛒 Add to cart & checkout
+- 💳 Order confirmation page
+- 🔍 Search functionality
+- 🎨 Responsive UI with CSS & JavaScript
+- 🗄️ SQLite database for storing user & order data
 
 ---
 
-## 🔧 Setup Instructions
+## 📂 Project Structure
+Online-Restaurant-main/
+│── app.py # Main Flask app
+│── init_db.py # Database initialization
+│── database.db # SQLite database
+│── requirements.txt # Dependencies
+│── Procfile # For deployment (Heroku)
+│
+├── templates/ # HTML pages
+│ ├── index.html
+│ ├── login.html
+│ ├── cart.html
+│ ├── category.html
+│ ├── checkout.html
+│ ├── order_confirmation.html
+│ └── search_results.html
+│
+├── static/ # CSS & JavaScript
+│ ├── style.css
+│ └── script.js
+│
+└── venv/ # Virtual environment (ignore in GitHub)
 
-### 1. Clone the Repository
+yaml
+Copy
+Edit
 
+---
+
+## ⚙️ Installation & Setup
+
+### 1️⃣ Clone Repository
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-2. Create Virtual Environment and Install Dependencies
+git clone https://github.com/your-username/online-restaurant.git
+cd online-restaurant
+2️⃣ Create Virtual Environment
 bash
 Copy
 Edit
 python -m venv venv
-venv\Scripts\activate    # On Windows
-# source venv/bin/activate   # On macOS/Linux
-
-pip install -r requirements.txt
-If requirements.txt is missing, you can install manually:
-
+source venv/bin/activate   # On Linux/Mac
+venv\Scripts\activate      # On Windows
+3️⃣ Install Dependencies
 bash
 Copy
 Edit
-pip install flask
-3. Run the App
+pip install -r requirements.txt
+4️⃣ Initialize Database
+bash
+Copy
+Edit
+python init_db.py
+5️⃣ Run the Application
 bash
 Copy
 Edit
 python app.py
-Then open your browser and go to:
-👉 http://127.0.0.1:5000
+App will run on 👉 http://127.0.0.1:5000/
+
+🛠️ Technologies Used
+Backend: Flask (Python)
+
+Database: SQLite
+
+Frontend: HTML, CSS, JavaScript
+
+Deployment: Heroku (via Procfile)
+
+
+
 
 🔐 Login Credentials
 You can log in using the following test account:
@@ -53,21 +93,3 @@ You can log in using the following test account:
 Username: krishna
 
 Password: krishna123
-
-🗂️ Folder Structure
-cpp
-Copy
-Edit
-online-restaurant/
-├── app.py
-├── templates/
-│   ├── index.html
-│   ├── category.html
-│   ├── cart.html
-│   ├── checkout.html
-│   ├── login.html
-│   ├── register.html
-│   ├── search_results.html
-│   └── base.html
-├── requirements.txt
-└── README.md
