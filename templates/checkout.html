@@ -8,64 +8,39 @@
     .payment-fields { display: none; transition: all 0.3s ease; }
   </style>
   <script>
+    // Toggle card/UPI fields
     function togglePaymentFields() {
-      var method = document.getElementById("payment_method").value;
-
-      var cardFields = document.getElementById("card-fields");
-      var upiFields = document.getElementById("upi-fields");
-
-      if (method === "Card") {
-        cardFields.style.display = "block";
-        upiFields.style.display = "none";
-      } else if (method === "UPI") {
-        cardFields.style.display = "none";
-        upiFields.style.display = "block";
-      } else {
-        cardFields.style.display = "none";
-        upiFields.style.display = "none";
-      }
+      const method = document.getElementById("payment_method").value;
+      document.getElementById("card-fields").style.display = method === "Card" ? "block" : "none";
+      document.getElementById("upi-fields").style.display = method === "UPI" ? "block" : "none";
     }
 
+    // Apply coupons and calculate totals dynamically
     function applyCoupons() {
-      let input = document.getElementById("coupon").value.trim();
-      let coupons = input.split(/[ ,]+/).map(c => c.toUpperCase());
+      const input = document.getElementById("coupon").value.trim();
+      const coupons = input.split(/[ ,]+/).map(c => c.toUpperCase());
 
-      let totalElement = document.getElementById("order-total");
-      let discountElement = document.getElementById("discount-row");
-      let deliveryElement = document.getElementById("delivery-row");
+      const subtotal = parseFloat(document.getElementById("subtotal").getAttribute("data-value"));
+      let deliveryFee = parseFloat(document.getElementById("delivery-row").getAttribute("data-value"));
+      let discount = 0;
 
-      let originalTotal = parseFloat(totalElement.getAttribute("data-original")); 
-      let deliveryFee = parseFloat(deliveryElement.getAttribute("data-original")); 
-
-      let bestDiscount = 0;
-      let freeDelivery = false;
-
-      coupons.forEach(coupon => {
-        if (coupon === "DISCOUNT10") {
-          bestDiscount = Math.max(bestDiscount, 0.10 * originalTotal);
-        } else if (coupon === "WELCOME50") {
-          bestDiscount = Math.max(bestDiscount, 50);
-        } else if (coupon === "FREESHIP") {
-          freeDelivery = true;
-        }
+      coupons.forEach(c => {
+        if (c === "WELCOME10") discount += 0.10 * subtotal;
+        else if (c === "SAVE50") discount += 50;
+        else if (c === "FREESHIP") deliveryFee = 0;
       });
 
-      let finalDelivery = freeDelivery ? 0 : deliveryFee;
-      let newTotal = (originalTotal - bestDiscount) + finalDelivery;
+      const finalTotal = Math.max(subtotal + deliveryFee - discount, 0);
 
-      if (bestDiscount > 0) {
-        discountElement.style.display = "flex";
-        document.getElementById("discount-amount").innerText = "-₹" + bestDiscount.toFixed(2);
-      } else {
-        discountElement.style.display = "none";
-      }
-
-      deliveryElement.innerHTML = `Delivery Fee <span>₹${finalDelivery.toFixed(2)}</span>`;
-      totalElement.innerText = "₹" + newTotal.toFixed(2);
+      // Update UI
+      document.getElementById("delivery-row").querySelector("span").innerText = `₹${deliveryFee.toFixed(2)}`;
+      document.getElementById("discount-row").style.display = discount > 0 ? "flex" : "none";
+      document.getElementById("discount-amount").innerText = discount > 0 ? `-₹${discount.toFixed(2)}` : "";
+      document.getElementById("order-total").innerText = `₹${finalTotal.toFixed(2)}`;
     }
 
-    window.onload = function() {
-      togglePaymentFields(); // initialize correct fields
+    window.onload = () => {
+      togglePaymentFields();
       document.getElementById("coupon").addEventListener("input", applyCoupons);
     }
   </script>
@@ -131,8 +106,8 @@
 
       <!-- Coupon Code -->
       <div class="form-group">
-        <label>Coupon Code (you can enter multiple):</label>
-        <input type="text" name="coupon" id="coupon" class="form-control" placeholder="e.g., DISCOUNT10 FREESHIP">
+        <label>Coupon Code (multiple allowed):</label>
+        <input type="text" name="coupon" id="coupon" class="form-control" placeholder="e.g., WELCOME10 FREESHIP">
       </div>
 
       <!-- Order Summary -->
@@ -141,20 +116,21 @@
         {% for item in cart %}
         <li class="list-group-item d-flex justify-content-between">
           {{ item.name }} x{{ item.quantity }}
-          <span>₹{{ item.quantity|int * item.price|int }}</span>
+          <span>₹{{ item.quantity|int * item.price|float }}</span>
         </li>
         {% endfor %}
-        <li id="discount-row" class="list-group-item d-flex justify-content-between text-success" style="display:none;">
-          Discount
-          <span id="discount-amount"></span>
+        <li class="list-group-item d-flex justify-content-between">
+          Subtotal 
+          <span id="subtotal" data-value="{{ subtotal }}">₹{{ "%.2f"|format(subtotal) }}</span>
         </li>
-        <li id="delivery-row" class="list-group-item d-flex justify-content-between" data-original="40">
-          Delivery Fee
-          <span>₹40</span>
+        <li id="delivery-row" class="list-group-item d-flex justify-content-between" data-value="{{ delivery_fee }}">
+          Delivery Fee <span>₹{{ "%.2f"|format(delivery_fee) }}</span>
+        </li>
+        <li id="discount-row" class="list-group-item d-flex justify-content-between text-success" style="display:none;">
+          Discount <span id="discount-amount"></span>
         </li>
         <li class="list-group-item d-flex justify-content-between font-weight-bold">
-          Total
-          <span id="order-total" data-original="{{ total }}">₹{{ total }}</span>
+          Total <span id="order-total">₹{{ "%.2f"|format(total) }}</span>
         </li>
       </ul>
 

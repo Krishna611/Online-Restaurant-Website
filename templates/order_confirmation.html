@@ -17,6 +17,7 @@
     <h2 class="text-success">🎉 Thank You, {{ name }}!</h2>
     <p>Your order has been placed successfully.</p>
 
+    <!-- Delivery Details -->
     <h4>Delivery Details:</h4>
     <p><strong>Address:</strong> {{ address }}</p>
     <p><strong>Payment Method:</strong> {{ payment_method }}</p>
@@ -38,23 +39,34 @@
       {% for item in cart %}
       <li class="list-group-item d-flex justify-content-between">
         {{ item.name }} x{{ item.quantity }}
-        <span>₹{{ item.quantity|int * item.price|int }}</span>
+        <span>₹{{ "%.2f"|format(item.quantity * item.price) }}</span>
       </li>
       {% endfor %}
+
       <li class="list-group-item d-flex justify-content-between">
-        Subtotal <span>₹{{ total }}</span>
+        Subtotal
+        <span>₹{{ "%.2f"|format(subtotal) }}</span>
       </li>
+
+      <li class="list-group-item d-flex justify-content-between">
+        Delivery Fee
+        <span>₹{{ "%.2f"|format(delivery_fee) }}</span>
+      </li>
+
       {% if discount > 0 %}
       <li class="list-group-item d-flex justify-content-between text-success">
-        Discount <span>-₹{{ discount }}</span>
+        Discount
+        <span>-₹{{ "%.2f"|format(discount) }}</span>
       </li>
       {% endif %}
+
       <li class="list-group-item d-flex justify-content-between font-weight-bold">
-        Final Total <span>₹{{ final_total }}</span>
+        Final Total
+        <span>₹{{ "%.2f"|format(final_total) }}</span>
       </li>
     </ul>
 
-    <!-- Feedback & Rating (hidden until delivery) -->
+    <!-- Feedback Section -->
     <div id="feedbackSection" class="mt-4" style="display:none;">
       <h4>Rate Your Experience:</h4>
       <div class="mb-2">
@@ -73,7 +85,6 @@
   </div>
 
   <script>
-    // Format time as hh:mm AM/PM
     function formatTime(date){
       let h = date.getHours();
       let m = date.getMinutes();
@@ -83,7 +94,6 @@
       return `${h}:${m} ${ampm}`;
     }
 
-    // Set estimated delivery (without countdown)
     function setEstimatedDelivery(){
       const now = new Date();
       const startTime = new Date(now.getTime() + 30*60000);
@@ -95,7 +105,7 @@
     window.onload = setEstimatedDelivery;
 
     // Order Steps
-    let orderSteps = [
+    const orderSteps = [
       {id:1,text:"Order Confirmed at Restaurant",active:true,timeOffset:0},
       {id:2,text:"Food is being prepared",active:false,timeOffset:5},
       {id:3,text:"Out for Delivery",active:false,timeOffset:25},
@@ -129,13 +139,13 @@
           clearInterval(interval);
           document.getElementById('feedbackSection').style.display='block';
         }
-      },5000); // progress every 5 seconds
+      },5000);
     }
 
     renderStepper();
     simulateProgress();
 
-    // Feedback stars
+    // Feedback Stars
     const stars = document.querySelectorAll('.star');
     let rating = 0;
     stars.forEach(star=>{
@@ -143,17 +153,16 @@
       star.addEventListener('click',()=>{ rating=star.dataset.value; highlightStars(rating); });
       star.addEventListener('mouseout',()=>{ highlightStars(rating); });
     });
+
     function highlightStars(count){
       stars.forEach(star=>{ star.textContent = (star.dataset.value <= count) ? '★':'☆'; });
     }
 
-    // Submit feedback
+    // Submit Feedback
     document.getElementById('submitFeedback').addEventListener('click',()=>{
       if(rating===0){ alert("Please select a rating."); return; }
       document.getElementById('feedbackMessage').style.display='block';
-      setTimeout(()=>{
-        document.getElementById('feedbackSection').style.display='none';
-      },2000);
+      setTimeout(()=>{ document.getElementById('feedbackSection').style.display='none'; },2000);
     });
   </script>
 </body>

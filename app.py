@@ -212,9 +212,21 @@ def update_quantity():
 def checkout():
     if 'username' not in session:
         return redirect(url_for('login'))
+    
     cart = session.get('cart', [])
-    total = sum(int(item['price']) * item['quantity'] for item in cart)
-    return render_template("checkout.html", cart=cart, total=total)
+    
+    # Proper subtotal calculation using float for accuracy
+    subtotal = sum(float(item['price']) * int(item['quantity']) for item in cart)
+    delivery_fee = 40  # fixed delivery fee
+    total = subtotal + delivery_fee
+    
+    return render_template(
+        "checkout.html",
+        cart=cart,
+        subtotal=subtotal,
+        delivery_fee=delivery_fee,
+        total=total
+    )
 
 # ✅ Place Order - Enhanced
 @app.route("/place-order", methods=["POST"])
@@ -235,25 +247,35 @@ def place_order():
     upi_id = request.form.get('upi_id')
 
     cart = session.get('cart', [])
-    total = sum(int(item['price']) * item['quantity'] for item in cart)
+
+    # Convert quantities and prices to proper numeric types
+    for item in cart:
+        item['quantity'] = int(item['quantity'])
+        item['price'] = float(item['price'])
+
+    # Proper subtotal calculation
+    subtotal = sum(item['price'] * item['quantity'] for item in cart)
+    delivery_fee = 40  # fixed delivery fee
 
     # Apply coupon logic
     discount = 0
     if coupon:
-        if coupon.upper() == "WELCOME10":
-            discount = total * 0.10
-        elif coupon.upper() == "SAVE50":
-            discount = 50
-        else:
-            discount = 0  # invalid coupon
+        coupons = coupon.upper().split()
+        for c in coupons:
+            if c == "WELCOME10":
+                discount += 0.10 * subtotal
+            elif c == "SAVE50":
+                discount += 50
+            elif c == "FREESHIP":
+                delivery_fee = 0  # free delivery
 
-    final_total = max(total - discount, 0)
+    # Ensure final total is not negative
+    final_total = max(subtotal + delivery_fee - discount, 0)
 
     # Simulate saving order to DB (for demo, we just clear session)
     session.pop('cart', None)
 
     # Build payment details summary
-    payment_details = ""
     if payment_method == "Card":
         payment_details = f"Card ending with ****{card_number[-4:]}" if card_number else "Card Payment"
     elif payment_method == "UPI":
@@ -261,16 +283,20 @@ def place_order():
     else:
         payment_details = "Cash on Delivery"
 
-    # Confirmation Page
-    return render_template("order_confirmation.html",
-                           name=name,
-                           address=address,
-                           payment_method=payment_details,
-                           cart=cart,
-                           total=total,
-                           discount=discount,
-                           final_total=final_total,
-                           notes=notes)
+    # Render confirmation page
+    return render_template(
+        "order_confirmation.html",
+        name=name,
+        address=address,
+        payment_method=payment_details,
+        cart=cart,
+        subtotal=subtotal,
+        delivery_fee=delivery_fee,
+        discount=discount,
+        final_total=final_total,
+        notes=notes
+    )
+
 
 # 🔑 Login Page
 @app.route('/login', methods=['GET', 'POST'])
